@@ -7,7 +7,7 @@ from tensorflow.keras.models import load_model
 import yfinance as yf
 
 # Load the pre-trained model
-model = load_model('keras_model.h5')
+model = load_model('keras_model2.h5')
 
 def predict_stock_prices(stock_name, days, ahead):
     stock = yf.Ticker(stock_name)
