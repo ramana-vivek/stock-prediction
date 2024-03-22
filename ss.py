@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 import yfinance as yf
 
@@ -21,11 +21,15 @@ def create_model(X_train):
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
-def predict_stock_price(stock_name, ep, ahead, d):
+def load_model():
+    model = load_model()
+    return model
+
+def predict_stock_price(stock_name, ep, ahead, d, model):
     stock = yf.Ticker(stock_name)
     hist = stock.history(period="5y")
-
     df = hist
+
     n = int(hist.shape[0] * 0.8)
     training_set = df.iloc[:n, 1:2].values
     test_set = df.iloc[n:, 1:2].values
@@ -38,15 +42,18 @@ def predict_stock_price(stock_name, ep, ahead, d):
     for i in range(d, n - ahead):
         X_train.append(training_set_scaled[i - d:i, 0])
         y_train.append(training_set_scaled[i + ahead, 0])
+
     X_train, y_train = np.array(X_train), np.array(y_train)
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 
-    model = create_model(X_train)
-    model.fit(X_train, y_train, epochs=ep, batch_size=32)
+    # Instead of creating a new model, use the provided model
+    # model = create_model(X_train)
+    # model.fit(X_train, y_train, epochs=ep, batch_size=32)
 
     dataset_train = df.iloc[:n, 1:2]
     dataset_test = df.iloc[n:, 1:2]
     dataset_total = pd.concat((dataset_train, dataset_test), axis=0)
+
     inputs = dataset_total[len(dataset_total) - len(dataset_test) - d:].values
     inputs = inputs.reshape(-1, 1)
     inputs = sc.transform(inputs)
@@ -64,20 +71,18 @@ def predict_stock_price(stock_name, ep, ahead, d):
     df = df.reset_index(drop=True)
 
     fig, ax = plt.subplots()
-    ax.plot(df.loc[n + d + ahead:, 'Date'], dataset_test.values, color='red', label='Actual Price')
-    ax.plot(df.loc[n + d + ahead:, 'Date'], predicted_stock_price, color='blue', label='Predicted Price')
+    ax.plot(df.loc[n:, 'Date'], dataset_test.values, color='red', label='Actual Price')
+    ax.plot(df.loc[n:, 'Date'], predicted_stock_price, color='blue', label='Predicted Price')
     ax.set_title('Stock Price Prediction')
     ax.set_xlabel('Time')
     ax.set_ylabel('Price')
     ax.legend()
     plt.xticks(rotation=90)
-    plt.close()  # Close the figure to prevent it from being displayed prematurely
 
     return fig
 
 def main():
     st.title("Stock Price Prediction")
-
     stock_name = st.text_input("Enter stock name (e.g., AAPL, GOOG, TSLA)")
     ep = st.number_input("Enter number of epochs", min_value=1, value=100, step=1)
     ahead = st.number_input("Enter number of days ahead to predict", min_value=1, value=30, step=1)
@@ -85,7 +90,11 @@ def main():
 
     if st.button("Predict"):
         if stock_name:
-            fig = predict_stock_price(stock_name, ep, ahead, d)
+            # Load the pre-trained model
+            model = load_model()
+
+            # Pass the loaded model to the predict_stock_price function
+            fig = predict_stock_price(stock_name, ep, ahead, d, model)
             st.pyplot(fig)
         else:
             st.warning("Please enter a stock name.")
