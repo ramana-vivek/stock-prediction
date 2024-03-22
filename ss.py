@@ -84,9 +84,9 @@ def predict_stock_price(stock_name, ep, ahead, d, model):
 def main():
     st.title("Stock Price Prediction")
     stock_name = st.text_input("Enter stock name (e.g., AAPL, GOOG, TSLA)")
-    ep = st.number_input("Enter number of epochs", min_value=1, value=100, step=1)
+    ep = st.number_input("Enter number of epochs", min_value=1, value=1, step=1)
     ahead = st.number_input("Enter number of days ahead to predict", min_value=1, value=30, step=1)
-    d = st.number_input("Enter number of previous days to consider", min_value=1, value=60, step=1)
+    d = st.number_input("Enter number of previous days to consider", min_value=1, value=365, step=1)
 
     if st.button("Predict"):
         if stock_name:
